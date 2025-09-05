@@ -164,6 +164,110 @@ The documentation site is built from the `/docs` directory. To contribute to doc
 2. Test your changes locally
 3. Submit a pull request with your documentation updates
 
+## Troubleshooting
+
+### Common Development Issues
+
+#### Build Errors
+
+**"Worker terminated due to reaching memory limit"**
+```bash
+NODE_OPTIONS="--max-old-space-size=4096" pnpm build
+```
+
+**"pnpm command not found"**
+```bash
+npm install -g pnpm@latest
+# or
+corepack enable
+```
+
+**Build failing after git pull**
+```bash
+pnpm install --ignore-scripts
+pnpm run setup
+```
+
+#### Test Issues
+
+**"Docker services not available"**
+```bash
+pnpm run dev:services:up
+```
+
+**Tests timing out**
+```bash
+# Increase test timeout in package-specific vitest.config.ts
+export default defineConfig({
+  test: {
+    timeout: 30000, // 30 seconds
+  },
+});
+```
+
+**Memory integration tests failing**
+```bash
+# Ensure PostgreSQL is running and accessible
+docker ps | grep postgres
+# Check environment variables
+echo $DATABASE_URL
+```
+
+#### TypeScript Issues
+
+**"Cannot find module" errors**
+```bash
+# Rebuild all packages first
+pnpm build
+# Then run typecheck
+pnpm typecheck
+```
+
+**Circular dependency warnings**
+```bash
+# Check for import cycles in your changes
+madge --circular --extensions ts,tsx packages/core/src
+```
+
+#### Development Server Issues
+
+**"Port already in use"**
+```bash
+# Kill existing processes on port 3000
+lsof -ti:3000 | xargs kill -9
+```
+
+**Playground UI not loading**
+```bash
+# Rebuild playground packages
+pnpm build:playground-ui
+pnpm build:cli
+```
+
+### Performance Tips
+
+#### Faster Builds
+- Build only what you need: `pnpm build:core` instead of `pnpm build`
+- Use watch mode during development: `pnpm build:watch`
+- Clean node_modules if builds are slow: `pnpm clean && pnpm install`
+
+#### Faster Tests
+- Test individual packages: `cd packages/core && pnpm test`
+- Use test filtering: `pnpm test -- --grep "agent"`
+- Build from root first, then test locally for fastest iteration
+
+### Getting Help
+
+If you're still having issues:
+1. Check the [GitHub Issues](https://github.com/mastra-ai/mastra/issues) for similar problems
+2. Join the [Discord community](https://discord.gg/BTYqqHKUrf) for real-time help
+3. Include your environment details when asking for help:
+   ```bash
+   node --version
+   pnpm --version
+   npm ls @mastra/core
+   ```
+
 ## Need Help?
 
 Join the [Mastra Discord community](https://discord.gg/BTYqqHKUrf) for support and discussions.

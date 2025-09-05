@@ -15,6 +15,8 @@ import type { Span, Logger } from 'braintrust';
 export interface BraintrustExporterConfig {
   /** Braintrust API key */
   apiKey?: string;
+  /** Project name for Braintrust logging (default: 'mastra-tracing') */
+  projectName?: string;
   /** Optional custom endpoint */
   endpoint?: string;
   /** Logger level for diagnostic messages (default: 'warn') */
@@ -192,7 +194,7 @@ export class BraintrustExporter implements AITracingExporter {
 
   private async initLogger(span: AnyAISpan): Promise<void> {
     const logger = await initLogger({
-      projectName: 'mastra-tracing', // TODO: Make this configurable
+      projectName: this.config.projectName || 'mastra-tracing',
       apiKey: this.config.apiKey,
       appUrl: this.config.endpoint,
       ...this.config.tuningParameters,
