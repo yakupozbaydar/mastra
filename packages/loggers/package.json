@@ -1,7 +1,7 @@
 {
   "name": "@mastra/loggers",
   "version": "0.10.11",
-  "description": "",
+  "description": "Logging utilities and structured loggers for Mastra AI framework",
   "type": "module",
   "files": [
     "dist",
