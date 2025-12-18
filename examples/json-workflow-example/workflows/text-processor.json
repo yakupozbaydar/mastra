@@ -1,0 +1,56 @@
+{
+  "id": "text-processor",
+  "description": "Process text with multiple steps",
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "text": {
+        "type": "string",
+        "description": "Text to process"
+      }
+    },
+    "required": ["text"]
+  },
+  "outputSchema": {
+    "type": "object",
+    "properties": {
+      "result": {
+        "type": "string"
+      }
+    }
+  },
+  "steps": [
+    {
+      "id": "uppercase",
+      "type": "function",
+      "description": "Convert text to uppercase",
+      "execute": "async ({ inputData }) => { return { text: inputData.text.toUpperCase() }; }"
+    },
+    {
+      "id": "addPrefix",
+      "type": "function",
+      "description": "Add a prefix to the text",
+      "execute": "async ({ inputData }) => { return { text: `PROCESSED: ${inputData.text}` }; }"
+    },
+    {
+      "id": "finalFormat",
+      "type": "function",
+      "description": "Final formatting",
+      "execute": "async ({ inputData }) => { return { result: `[FINAL] ${inputData.text}` }; }"
+    }
+  ],
+  "flow": [
+    {
+      "type": "step",
+      "stepId": "uppercase"
+    },
+    {
+      "type": "step",
+      "stepId": "addPrefix"
+    },
+    {
+      "type": "step",
+      "stepId": "finalFormat"
+    }
+  ]
+}
