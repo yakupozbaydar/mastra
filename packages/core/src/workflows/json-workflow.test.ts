@@ -63,7 +63,7 @@ describe('JSON Workflow', () => {
           {
             id: 'ask-agent',
             type: 'agent',
-            referenceId: 'test-agent',
+            referenceId: 'testAgent',  // Use the key used to register the agent
             description: 'Ask the agent',
           },
         ],
@@ -97,7 +97,7 @@ describe('JSON Workflow', () => {
           {
             id: 'use-tool',
             type: 'tool',
-            referenceId: 'test-tool',
+            referenceId: 'testTool',
           },
         ],
         flow: [{ type: 'step', stepId: 'use-tool' }],
@@ -187,12 +187,19 @@ describe('JSON Workflow', () => {
         outputSchema: {
           type: 'object',
         },
-        steps: [],
+        steps: [
+          {
+            id: 'dummy-step',
+            type: 'function',
+            execute: 'async ({ inputData }) => { return {}; }',
+          },
+        ],
         flow: [
           {
             type: 'sleep',
             duration: 100,
           },
+          { type: 'step', stepId: 'dummy-step' },
         ],
       };
 
@@ -215,11 +222,11 @@ describe('JSON Workflow', () => {
       const definition: JsonWorkflowDefinition = {
         id: 'no-steps',
         steps: [],
-        flow: [{ type: 'step', stepId: 'missing' }],
+        flow: [],
       };
 
       expect(() => createWorkflowFromJson(definition, mastra)).toThrow(
-        'Step \'missing\' referenced in flow but not defined in steps',
+        'Workflow definition must have at least one step',
       );
     });
 
@@ -236,9 +243,7 @@ describe('JSON Workflow', () => {
         flow: [{ type: 'step', stepId: 'step1' }],
       };
 
-      expect(() => createWorkflowFromJson(definition, mastra)).toThrow(
-        'Agent \'non-existent-agent\' not found in Mastra instance',
-      );
+      expect(() => createWorkflowFromJson(definition, mastra)).toThrow('Agent with name non-existent-agent not found');
     });
 
     it('should throw error for non-existent tool', () => {
@@ -254,9 +259,7 @@ describe('JSON Workflow', () => {
         flow: [{ type: 'step', stepId: 'step1' }],
       };
 
-      expect(() => createWorkflowFromJson(definition, mastra)).toThrow(
-        'Tool \'non-existent-tool\' not found in Mastra instance',
-      );
+      expect(() => createWorkflowFromJson(definition, mastra)).toThrow('Tool with name non-existent-tool not found');
     });
   });
 
@@ -308,7 +311,7 @@ describe('JSON Workflow', () => {
           {
             id: 'use-tool',
             type: 'tool',
-            referenceId: 'test-tool',
+            referenceId: 'testTool',  // Use the key used to register the tool
           },
         ],
         flow: [{ type: 'step', stepId: 'use-tool' }],

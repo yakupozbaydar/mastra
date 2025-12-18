@@ -264,12 +264,13 @@ export function createWorkflowFromJson(
 
       const agent = mastra.getAgent(stepDef.referenceId);
       if (!agent) {
+        const availableAgents = Object.keys(mastra.listAgents() || {}).join(', ');
         throw new MastraError({
           id: 'JSON_WORKFLOW_AGENT_NOT_FOUND',
           domain: ErrorDomain.MASTRA_WORKFLOW,
           category: ErrorCategory.USER,
           text: `Agent '${stepDef.referenceId}' not found in Mastra instance`,
-          details: { availableAgents: Object.keys(mastra.agents) },
+          details: { availableAgents },
         });
       }
 
@@ -286,12 +287,13 @@ export function createWorkflowFromJson(
 
       const tool = mastra.getTool(stepDef.referenceId);
       if (!tool) {
+        const availableTools = Object.keys(mastra.listTools() || {}).join(', ');
         throw new MastraError({
           id: 'JSON_WORKFLOW_TOOL_NOT_FOUND',
           domain: ErrorDomain.MASTRA_WORKFLOW,
           category: ErrorCategory.USER,
           text: `Tool '${stepDef.referenceId}' not found in Mastra instance`,
-          details: { availableTools: Object.keys(mastra.tools) },
+          details: { availableTools },
         });
       }
 
