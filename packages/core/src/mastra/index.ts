@@ -28,6 +28,7 @@ import type { MastraIdGenerator } from '../types';
 import type { MastraVector } from '../vector';
 import type { Workflow } from '../workflows';
 import { WorkflowEventProcessor } from '../workflows/evented/workflow-event-processor';
+import { createWorkflowFromJson, type JsonWorkflowDefinition } from '../workflows/json-workflow';
 import { createOnScorerHook } from './hooks';
 
 /**
@@ -2245,6 +2246,158 @@ export class Mastra<
       workflow.commit();
     }
     workflows[workflowKey] = workflow;
+  }
+
+  /**
+   * Creates and registers a workflow from a JSON definition.
+   *
+   * This method allows you to define workflows in JSON format and load them dynamically.
+   * The JSON definition can reference agents and tools that are already registered in the
+   * Mastra instance.
+   *
+   * @param definition - The JSON workflow definition
+   * @param key - Optional key to register the workflow under (defaults to workflow.id)
+   * @returns The created Workflow instance
+   *
+   * @throws {MastraError} When:
+   * - The workflow definition is invalid
+   * - Referenced agents or tools are not found
+   * - A workflow with the same key already exists
+   *
+   * @example Creating a workflow from JSON
+   * ```typescript
+   * const mastra = new Mastra({
+   *   agents: {
+   *     summarizer: new Agent({
+   *       id: 'summarizer',
+   *       name: 'Summarizer',
+   *       instructions: 'Summarize the given text',
+   *       model: 'openai/gpt-4o'
+   *     })
+   *   }
+   * });
+   *
+   * const workflowDef: JsonWorkflowDefinition = {
+   *   id: 'summarize-workflow',
+   *   description: 'Summarizes input text',
+   *   inputSchema: {
+   *     type: 'object',
+   *     properties: {
+   *       prompt: { type: 'string' }
+   *     },
+   *     required: ['prompt']
+   *   },
+   *   outputSchema: {
+   *     type: 'object',
+   *     properties: {
+   *       text: { type: 'string' }
+   *     }
+   *   },
+   *   steps: [
+   *     {
+   *       id: 'summarize',
+   *       type: 'agent',
+   *       referenceId: 'summarizer',
+   *       description: 'Summarize the text'
+   *     }
+   *   ],
+   *   flow: [
+   *     { type: 'step', stepId: 'summarize' }
+   *   ]
+   * };
+   *
+   * const workflow = mastra.addWorkflowFromJson(workflowDef);
+   * const run = await workflow.createRun();
+   * const result = await run.start({
+   *   inputData: { prompt: 'Summarize this long text...' }
+   * });
+   * console.log(result.result);
+   * ```
+   *
+   * @example Loading workflow from JSON file
+   * ```typescript
+   * import fs from 'fs';
+   *
+   * const workflowJson = JSON.parse(
+   *   fs.readFileSync('./workflows/my-workflow.json', 'utf-8')
+   * );
+   *
+   * const workflow = mastra.addWorkflowFromJson(workflowJson);
+   * ```
+   *
+   * @example Workflow with tools
+   * ```typescript
+   * const workflowDef: JsonWorkflowDefinition = {
+   *   id: 'search-workflow',
+   *   steps: [
+   *     {
+   *       id: 'search',
+   *       type: 'tool',
+   *       referenceId: 'web-search-tool'
+   *     }
+   *   ],
+   *   flow: [
+   *     { type: 'step', stepId: 'search' }
+   *   ]
+   * };
+   * ```
+   */
+  public addWorkflowFromJson(definition: JsonWorkflowDefinition, key?: string): Workflow<any, any, any, any, any, any> {
+    const workflow = createWorkflowFromJson(definition, this);
+    this.addWorkflow(workflow, key);
+    return workflow;
+  }
+
+  /**
+   * Creates and registers a workflow from a JSON string.
+   *
+   * This is a convenience method that parses a JSON string and creates a workflow from it.
+   * See `addWorkflowFromJson` for more details on the workflow definition format.
+   *
+   * @param jsonString - The JSON string containing the workflow definition
+   * @param key - Optional key to register the workflow under (defaults to workflow.id)
+   * @returns The created Workflow instance
+   *
+   * @throws {MastraError} When:
+   * - The JSON string cannot be parsed
+   * - The workflow definition is invalid
+   * - Referenced agents or tools are not found
+   *
+   * @example Loading workflow from JSON string
+   * ```typescript
+   * const workflowJson = `{
+   *   "id": "my-workflow",
+   *   "steps": [
+   *     {
+   *       "id": "step1",
+   *       "type": "agent",
+   *       "referenceId": "my-agent"
+   *     }
+   *   ],
+   *   "flow": [
+   *     { "type": "step", "stepId": "step1" }
+   *   ]
+   * }`;
+   *
+   * const workflow = mastra.addWorkflowFromJsonString(workflowJson);
+   * ```
+   */
+  public addWorkflowFromJsonString(jsonString: string, key?: string): Workflow<any, any, any, any, any, any> {
+    let definition: JsonWorkflowDefinition;
+
+    try {
+      definition = JSON.parse(jsonString);
+    } catch (error) {
+      throw new MastraError({
+        id: 'MASTRA_ADD_WORKFLOW_FROM_JSON_PARSE_ERROR',
+        domain: ErrorDomain.MASTRA_WORKFLOW,
+        category: ErrorCategory.USER,
+        text: 'Failed to parse workflow JSON string',
+        details: { error: error instanceof Error ? error.message : String(error) },
+      });
+    }
+
+    return this.addWorkflowFromJson(definition, key);
   }
 
   /**
